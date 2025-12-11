@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.controller;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.exception.ConditionsNotMetException;
@@ -23,14 +24,14 @@ public class FilmController {
     private int globalId = 0;
 
     @GetMapping
-    public Collection<Film> getFilms() {
+    public ResponseEntity<Collection<Film>> getFilms() {
         log.info("Получен запрос на получение всех фильмов. Количество фильмов: {}", films.size());
-        return films.values();
+        return ResponseEntity.ok(films.values());
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Film createFilm(@Valid @RequestBody Film film) {
+    public ResponseEntity<Film> createFilm(@Valid @RequestBody Film film) {
         log.info("Получен запрос на добавление фильма: {}", film.getName());
 
         checkPostFilmValidation(film);
@@ -39,11 +40,11 @@ public class FilmController {
         films.put(film.getId(), film);
 
         log.info("Фильм успешно добавлен с id = {}", film.getId());
-        return film;
+        return ResponseEntity.ok(film);
     }
 
     @PutMapping
-    public Film updateFilm(@Valid @RequestBody Film film) {
+    public ResponseEntity<Film> updateFilm(@Valid @RequestBody Film film) {
         log.info("Получен запрос на обновление фильма с id = {}", film.getId());
 
         Film existingFilm = films.get(film.getId());
@@ -72,7 +73,7 @@ public class FilmController {
 
         films.put(existingFilm.getId(), existingFilm);
         log.info("Фильм с id = {} успешно обновлён", film.getId());
-        return existingFilm;
+        return ResponseEntity.ok(existingFilm);
     }
 
     private void checkPostFilmValidation(Film film) {
