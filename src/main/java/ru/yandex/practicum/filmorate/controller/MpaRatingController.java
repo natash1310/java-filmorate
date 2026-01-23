@@ -16,12 +16,12 @@ import java.util.Collection;
 public class MpaRatingController {
     private final MpaRatingService mpaService;
 
-    @GetMapping //получить полный список рейтингов
+    @GetMapping
     public Collection<MpaRating> getMpa() {
         return mpaService.getMpaRating();
     }
 
-    @GetMapping("/{id}") //получить рейтинг по id
+    @GetMapping("/{id}")
     public MpaRating getMpaById(@PathVariable int id) {
         return mpaService.getMpaById(id);
     }

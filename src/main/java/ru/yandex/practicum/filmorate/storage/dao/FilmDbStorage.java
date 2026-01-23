@@ -13,15 +13,13 @@ import ru.yandex.practicum.filmorate.interfaces.dal.FilmStorage;
 import ru.yandex.practicum.filmorate.interfaces.dal.LikeStorage;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
+import ru.yandex.practicum.filmorate.model.MpaRating;
 import ru.yandex.practicum.filmorate.services.GenreService;
 import ru.yandex.practicum.filmorate.services.MpaRatingService;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Component
 @Primary
@@ -57,9 +55,9 @@ public class FilmDbStorage implements FilmStorage {
         SimpleJdbcInsert simpleJdbcInsert = new SimpleJdbcInsert(jdbcTemplate)
                 .withTableName("films")
                 .usingGeneratedKeyColumns("film_id");
+        isValidMpa(film.getMpa());
+        isValidGenres(film.getGenres());
         int filmId = simpleJdbcInsert.executeAndReturnKey(toMap(film)).intValue();
-
-        //Добавить жанры
         if (film.getGenres() != null && !film.getGenres().isEmpty()) {
             filmGenresStorage.addGenres(film.getGenres(), filmId);
         }
@@ -68,7 +66,8 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public Film updateFilm(Film film) {
-        getFilm(film.getId());
+        isValidMpa(film.getMpa());
+        isValidGenres(film.getGenres());
         String sqlQuery = "update FILMS set NAME = ?, DESCRIPTION = ?, RELEASE_DATE = ?, DURATION = ?, RATE = ?, " +
                 "MPA_ID = ? where FILM_ID = ?";
         jdbcTemplate.update(sqlQuery,
@@ -77,21 +76,19 @@ public class FilmDbStorage implements FilmStorage {
                 film.getReleaseDate(),
                 film.getDuration(),
                 film.getRate(),
-                film.getMpaRating().getId(),
+                film.getMpa().getId(),
                 film.getId());
 
         Film oldFilm = getFilm(film.getId());
-
-        //Очистить жанры
         Collection<Genre> existingGenres = oldFilm.getGenres();
         if (existingGenres != null && !existingGenres.isEmpty()) {
-            filmGenresStorage.deleteGenres(film.getId());
+            filmGenresStorage.deleteGenres(oldFilm.getId());
         }
-        //Добавить жанры
+
         if (film.getGenres() != null && !film.getGenres().isEmpty()) {
-            filmGenresStorage.addGenres(film.getGenres(), film.getId());
+            filmGenresStorage.addGenres(film.getGenres(), oldFilm.getId());
         }
-        return getFilm(film.getId());
+        return getFilm(oldFilm.getId());
     }
 
     private Film mapRowToFilm(ResultSet resultSet, int rowNum) throws SQLException {
@@ -102,7 +99,7 @@ public class FilmDbStorage implements FilmStorage {
                 .releaseDate(resultSet.getDate("release_date").toLocalDate())
                 .duration(resultSet.getInt("duration"))
                 .rate(resultSet.getInt("rate"))
-                .mpaRating(mpaService.getMpaById(resultSet.getInt("mpa_id")))
+                .mpa(mpaService.getMpaById(resultSet.getInt("mpa_id")))
                 .likes(likesStorage.getListOfLikes(resultSet.getInt("film_id")))
                 .genres(genreService.getListOfGenres(resultSet.getInt("film_id")))
                 .build();
@@ -115,7 +112,25 @@ public class FilmDbStorage implements FilmStorage {
         values.put("release_date", film.getReleaseDate());
         values.put("duration", film.getDuration());
         values.put("rate", film.getRate());
-        values.put("MPA_id", film.getMpaRating().getId());
+        values.put("MPA_id", film.getMpa().getId());
         return values;
+    }
+
+    private void isValidGenres(Set<Genre> genres) {
+        if (genres != null && !genres.isEmpty()) {
+            for (Genre genre : genres) {
+                Genre genreDb = genreService.getGenreById(genre.getId());
+                if (genreDb == null) {
+                    throw new NotFoundException(String.format("Жанр с id %s не найден", genre.getId()));
+                }
+            }
+        }
+    }
+
+    private void isValidMpa(MpaRating mpaRating) {
+        MpaRating mpa = mpaService.getMpaById(mpaRating.getId());
+        if (mpa == null) {
+            throw new NotFoundException(String.format("Mpa рейтинг с id %s не найден", mpaRating.getId()));
+        }
     }
 }

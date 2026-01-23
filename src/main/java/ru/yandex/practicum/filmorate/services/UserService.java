@@ -1,83 +1,90 @@
 package ru.yandex.practicum.filmorate.services;
 
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
-import ru.yandex.practicum.filmorate.interfaces.UserStorageIm;
+import ru.yandex.practicum.filmorate.interfaces.dal.FriendshipStorage;
+import ru.yandex.practicum.filmorate.interfaces.dal.UserStorage;
 import ru.yandex.practicum.filmorate.model.User;
 
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class UserService {
     private static final Logger log = LoggerFactory.getLogger(UserService.class);
-    private final UserStorageIm userStorageIm;
+    private final UserStorage userStorage;
+    private final FriendshipStorage friendShipStorage;
+    private int idGen = 1;
 
-    public List<User> getAllFriends(Integer id) {
-        User currentUser = userStorageIm.getUser(id);
-        log.debug("Количество друзей пользователя c id:{} = {}", id, (int) currentUser.getFriends().stream()
-                .map(userStorageIm::getUser).count());
-        return currentUser.getFriends().stream()
-                .map(userStorageIm::getUser)
+    public Collection<User> getAllUsers() {
+        return userStorage.getAllUsers();
+    }
+
+    public User getUser(int userId) {
+        return userStorage.getUser(userId);
+    }
+
+    public List<User> getAllFriends(int userId) {
+        userStorage.getUser(userId);
+        List<User> friendsList = friendShipStorage.getListOfFriends(userId).stream()
+                .map(userStorage::getUser)
                 .collect(Collectors.toList());
+        log.debug("Количество друзей пользователя c id:{} = {}", userId, (long) friendShipStorage
+                .getListOfFriends(userId).size());
+        return friendsList;
     }
 
-    public List<User> getCommonFriends(Integer id, Integer otherId) {
-        User currentUser = userStorageIm.getUser(id);
-        User otherUser = userStorageIm.getUser(otherId);
-        List<User> commonFriends = new ArrayList<>();
-        List<Integer> friendsByUser = new ArrayList<>(currentUser.getFriends());
-        for (int i = 0; i < currentUser.getFriends().size(); i++) {
-            if (otherUser.getFriends().contains(friendsByUser.get(i))) {
-                commonFriends.add(userStorageIm.getUser(friendsByUser.get(i)));
-            }
-        }
-        log.debug("Число общих друзей у пользователей с id:{} и id:{} = {}", id, otherId, commonFriends.size());
-        return commonFriends;
+    public List<User> getMutualFriends(int id, int otherId) {
+        userStorage.getUser(id);
+        userStorage.getUser(otherId);
+        List<User> mutualFriends = friendShipStorage.getAListOfMutualFriends(id, otherId).stream()
+                .map(userStorage::getUser)
+                .collect(Collectors.toList());
+        log.debug("Число общих друзей у пользователей с id:{} и id:{} = {}", id, otherId, mutualFriends.size());
+        return mutualFriends;
     }
 
-    public User addFriend(Integer id, Integer friendId) {
-        User currentUser = userStorageIm.getUser(id);
-        User friendUser = userStorageIm.getUser(friendId);
-        currentUser.getFriends().add(friendId);
-        friendUser.getFriends().add(id);
-        log.info("Пользователи с id:{} и id:{} - подружились!", id, friendId);
-        return currentUser;
+    public void addFriend(int userId, int friendId) {
+        userStorage.getUser(userId);
+        userStorage.getUser(friendId);
+        friendShipStorage.addAsFriend(userId, friendId);
+        log.info("Пользователи с id:{} и id:{} - подружились!", userId, friendId);
     }
 
-    public User removeFriend(Integer id, Integer friendId) {
-        User currentUser = userStorageIm.getUser(id);
-        User friendUser = userStorageIm.getUser(friendId);
-        checkRemoveFriendValidate(id, friendId);
-        currentUser.getFriends().remove(friendId);
-        friendUser.getFriends().remove(id);
-        log.info("Пользователи с id:{} и id:{} - прекратили дружбу!", id, friendId);
-        return currentUser;
+    public void removeFriend(int userId, int friendId) {
+        userStorage.getUser(userId);
+        userStorage.getUser(friendId);
+        checkRemoveFriendValidate(userId, friendId);
+        friendShipStorage.removeFromFriends(userId, friendId);
+        log.info("Пользователи с id:{} и id:{} - прекратили дружбу!", userId, friendId);
+
     }
 
     public User addUser(User user) {
         checkUserNameForBlankOrNull(user);
         checkPostUserValidate(user);
-        userStorageIm.addNewUser(user);
-        log.info("Пользователь успешно создан с id = {}", user.getId());
+        user.setId(idGen);
+        userStorage.addUser(user);
+        idGen++;
+        log.info("Добавлен пользователь: {}", user);
         return user;
     }
 
     public User updateUser(User user) {
-        userStorageIm.getUser(user.getId());
+        User beforeUser = userStorage.getUser(user.getId());
         checkUserNameForBlankOrNull(user);
-        userStorageIm.updateNewUser(user);
-        log.info("Пользователь с id = {} успешно обновлён", user.getId());
+        userStorage.updateUser(user);
+        log.info("Данные пользователя: {} Обновлены на: {}", beforeUser, user);
         return user;
     }
 
     private void checkPostUserValidate(User user) {
-        if (userStorageIm.getAllUsers().contains(user)) {
+        if (userStorage.getAllUsers().contains(user)) {
             log.error("Такой пользователь уже существует!, {}", user);
             throw new ValidationException("Такой пользователь уже существует!");
         } else if (user.getLogin().isEmpty() || user.getLogin().contains(" ")) {
@@ -93,11 +100,9 @@ public class UserService {
         }
     }
 
-    private void checkRemoveFriendValidate(Integer id, Integer friendId) {
-        if (!userStorageIm.getUser(id).getFriends().contains(friendId)) {
-            log.error("Пользователи с id:{} и id:{} - не друзья", id, friendId);
+    private void checkRemoveFriendValidate(int userId, int friendId) {
+        if (!userStorage.getUser(userId).getFriends().contains(friendId)) {
+            log.error("Пользователи с id:{} и id:{} - не друзья", userId, friendId);
         }
     }
-
-
 }

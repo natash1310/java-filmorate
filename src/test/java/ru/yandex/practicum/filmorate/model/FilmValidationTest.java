@@ -20,7 +20,7 @@ class FilmValidationTest extends BaseValidationTest {
         film.setDescription("Описание");
         film.setReleaseDate(LocalDate.of(2000, 1, 1));
         film.setDuration(100);
-        film.setMpaRating(new MpaRating(1, "test"));
+        film.setMpa(new MpaRating(1, "test"));
         return film;
     }
 

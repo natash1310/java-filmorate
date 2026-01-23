@@ -2,76 +2,61 @@ package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.interfaces.UserStorageIm;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.services.UserService;
 
 import java.util.Collection;
 import java.util.List;
 
-@Slf4j
+
 @RestController
 @RequestMapping("/users")
+@RequiredArgsConstructor
 public class UserController {
-
-    private final UserStorageIm userStorageIm;
     private final UserService userService;
 
-    public UserController(UserStorageIm userStorageIm, UserService userService) {
-        this.userStorageIm = userStorageIm;
-        this.userService = userService;
-    }
-
     @GetMapping
-    public ResponseEntity<Collection<User>> getUsers() {
-        log.info("Получен запрос на получение всех пользователей. Количество пользователей: {}",
-                userStorageIm.getAllUsers().size());
-        return ResponseEntity.ok(userStorageIm.getAllUsers());
+    public Collection<User> getAllUsers() {
+        return userService.getAllUsers();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<User> getUser(@PathVariable("id") @Positive Integer id) {
-        return ResponseEntity.ok(userStorageIm.getUser(id));
-    }
-
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public ResponseEntity<User> createUser(@Valid @RequestBody User user) {
-        log.info("Получен запрос на создание пользователя с email: {}", user.getEmail());
-        return ResponseEntity.ok(userService.addUser(user));
-    }
-
-    @PutMapping
-    public ResponseEntity<User> updateUser(@Valid @RequestBody User user) {
-        log.info("Получен запрос на обновление пользователя с id = {}", user.getId());
-        return ResponseEntity.ok(userService.updateUser(user));
-    }
-
-    @PutMapping("/{id}/friends/{friendId}")
-    public ResponseEntity<User> addFriend(@PathVariable("id") @Positive Integer id,
-                                          @PathVariable("friendId") @Positive Integer friendId) {
-        return ResponseEntity.ok(userService.addFriend(id, friendId));
-    }
-
-    @DeleteMapping("/{id}/friends/{friendId}")
-    public ResponseEntity<User> removeFriend(@PathVariable("id") @Positive Integer id,
-                                             @PathVariable("friendId") @Positive Integer friendId) {
-        return ResponseEntity.ok(userService.removeFriend(id, friendId));
+    public User getUser(@PathVariable("id") @Positive int id) {
+        return userService.getUser(id);
     }
 
     @GetMapping("/{id}/friends")
-    public ResponseEntity<List<User>> getAllFriends(@PathVariable("id") @Positive Integer id) {
-        return ResponseEntity.ok(userService.getAllFriends(id));
+    public List<User> getAllFriends(@PathVariable("id") @Positive int id) {
+        return userService.getAllFriends(id);
     }
 
     @GetMapping("/{id}/friends/common/{otherId}")
-    public ResponseEntity<List<User>> getCommonFriends(@PathVariable("id") @Positive Integer id,
-                                                       @PathVariable("otherId") @Positive Integer otherId) {
-        return ResponseEntity.ok(userService.getCommonFriends(id, otherId));
+    public List<User> getMutualFriends(@PathVariable("id") @Positive int userId,
+                                       @PathVariable("otherId") @Positive int otherId) {
+        return userService.getMutualFriends(userId, otherId);
     }
 
+    @PostMapping
+    public User addNewUser(@RequestBody @Valid User user) {
+        return userService.addUser(user);
+    }
+
+    @PutMapping
+    public User updateUser(@RequestBody @Valid User user) {
+        return userService.updateUser(user);
+    }
+
+    @PutMapping("/{id}/friends/{friendId}")
+    public void addFriend(@PathVariable("id") @Positive int userId,
+                          @PathVariable("friendId") @Positive int friendId) {
+        userService.addFriend(userId, friendId);
+    }
+
+    @DeleteMapping("/{id}/friends/{friendId}")
+    public void removeFriend(@PathVariable("id") @Positive int userId,
+                             @PathVariable("friendId") @Positive int friendId) {
+        userService.removeFriend(userId, friendId);
+    }
 }

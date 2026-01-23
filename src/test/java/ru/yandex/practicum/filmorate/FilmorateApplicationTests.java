@@ -281,7 +281,7 @@ class FilmorateApplicationTests {
                 .releaseDate(LocalDate.of(1960, 1, 1))
                 .duration(109)
                 .rate(1)
-                .mpaRating(MpaRating.builder().id(1).name("G").build())
+                .mpa(MpaRating.builder().id(1).name("G").build())
                 .likes(new HashSet<>())
                 .genres(new HashSet<>())
                 .build();
@@ -299,7 +299,7 @@ class FilmorateApplicationTests {
                 .releaseDate(LocalDate.of(1960, 1, 1))
                 .duration(100)
                 .rate(1)
-                .mpaRating(MpaRating.builder().id(1).name("G").build())
+                .mpa(MpaRating.builder().id(1).name("G").build())
                 .likes(new HashSet<>())
                 .genres(Set.of(Genre.builder().id(2).name("Драма").build()))
                 .build();
@@ -311,7 +311,7 @@ class FilmorateApplicationTests {
                 .releaseDate(LocalDate.of(1960, 1, 1))
                 .duration(100)
                 .rate(1)
-                .mpaRating(MpaRating.builder().id(1).name("G").build())
+                .mpa(MpaRating.builder().id(1).name("G").build())
                 .likes(new HashSet<>())
                 .genres(Set.of(Genre.builder().id(2).name("Драма").build()))
                 .build();
@@ -329,7 +329,7 @@ class FilmorateApplicationTests {
                 .releaseDate(LocalDate.of(1960, 1, 1))
                 .duration(100)
                 .rate(1)
-                .mpaRating(MpaRating.builder().id(1).name("G").build())
+                .mpa(MpaRating.builder().id(1).name("G").build())
                 .likes(new HashSet<>())
                 .genres(Set.of(Genre.builder().id(2).name("Драма").build()))
                 .build();
@@ -354,7 +354,7 @@ class FilmorateApplicationTests {
                 .releaseDate(LocalDate.of(1960, 1, 1))
                 .duration(109)
                 .rate(1)
-                .mpaRating(MpaRating.builder().id(1).name("G").build())
+                .mpa(MpaRating.builder().id(1).name("G").build())
                 .likes(new HashSet<>())
                 .genres(Set.of(Genre.builder().id(2).name("Драма").build()))
                 .build();
@@ -364,7 +364,7 @@ class FilmorateApplicationTests {
                 .releaseDate(LocalDate.of(1961, 1, 1))
                 .duration(109)
                 .rate(5)
-                .mpaRating(MpaRating.builder().id(1).name("G").build())
+                .mpa(MpaRating.builder().id(1).name("G").build())
                 .likes(new HashSet<>())
                 .genres(new HashSet<>())
                 .build();
@@ -392,7 +392,7 @@ class FilmorateApplicationTests {
                 .releaseDate(LocalDate.of(1960, 1, 1))
                 .duration(109)
                 .rate(1)
-                .mpaRating(MpaRating.builder().id(1).name("G").build())
+                .mpa(MpaRating.builder().id(1).name("G").build())
                 .likes(new HashSet<>())
                 .genres(Set.of(Genre.builder().id(2).name("Драма").build()))
                 .build();
@@ -422,7 +422,7 @@ class FilmorateApplicationTests {
                 .releaseDate(LocalDate.of(1960, 1, 1))
                 .duration(109)
                 .rate(1)
-                .mpaRating(MpaRating.builder().id(1).name("G").build())
+                .mpa(MpaRating.builder().id(1).name("G").build())
                 .likes(new HashSet<>())
                 .genres(Set.of(Genre.builder().id(2).name("Драма").build()))
                 .build();
@@ -448,7 +448,7 @@ class FilmorateApplicationTests {
                 .releaseDate(LocalDate.of(1960, 1, 1))
                 .duration(109)
                 .rate(1)
-                .mpaRating(MpaRating.builder().id(1).name("G").build())
+                .mpa(MpaRating.builder().id(1).name("G").build())
                 .likes(new HashSet<>())
                 .genres(Set.of(Genre.builder().id(2).name("Драма").build()))
                 .build();
@@ -477,7 +477,7 @@ class FilmorateApplicationTests {
                 .releaseDate(LocalDate.of(1960, 1, 1))
                 .duration(109)
                 .rate(1)
-                .mpaRating(MpaRating.builder().id(1).name("G").build())
+                .mpa(MpaRating.builder().id(1).name("G").build())
                 .likes(new HashSet<>())
                 .genres(Set.of(Genre.builder().id(2).name("Драма").build()))
                 .build();
@@ -510,7 +510,7 @@ class FilmorateApplicationTests {
                 .releaseDate(LocalDate.of(1960, 1, 1))
                 .duration(109)
                 .rate(1)
-                .mpaRating(MpaRating.builder().id(1).name("G").build())
+                .mpa(MpaRating.builder().id(1).name("G").build())
                 .likes(new HashSet<>())
                 .genres(Set.of(Genre.builder().id(2).name("Драма").build()))
                 .build();
@@ -520,7 +520,7 @@ class FilmorateApplicationTests {
                 .releaseDate(LocalDate.of(1961, 1, 1))
                 .duration(109)
                 .rate(5)
-                .mpaRating(MpaRating.builder().id(1).name("G").build())
+                .mpa(MpaRating.builder().id(1).name("G").build())
                 .likes(new HashSet<>())
                 .genres(new HashSet<>())
                 .build();
@@ -575,7 +575,7 @@ class FilmorateApplicationTests {
                 .releaseDate(LocalDate.of(1960, 1, 1))
                 .duration(109)
                 .rate(1)
-                .mpaRating(MpaRating.builder().id(1).name("G").build())
+                .mpa(MpaRating.builder().id(1).name("G").build())
                 .likes(new HashSet<>())
                 .genres(Set.of(Genre.builder().id(2).name("Драма").build()))
                 .build();
@@ -597,7 +597,7 @@ class FilmorateApplicationTests {
                 .releaseDate(LocalDate.of(1960, 1, 1))
                 .duration(109)
                 .rate(1)
-                .mpaRating(MpaRating.builder().id(1).name("G").build())
+                .mpa(MpaRating.builder().id(1).name("G").build())
                 .likes(new HashSet<>())
                 .genres(Set.of(genre2))
                 .build();
@@ -618,7 +618,7 @@ class FilmorateApplicationTests {
                 .releaseDate(LocalDate.of(1960, 1, 1))
                 .duration(109)
                 .rate(1)
-                .mpaRating(MpaRating.builder().id(1).name("G").build())
+                .mpa(MpaRating.builder().id(1).name("G").build())
                 .likes(new HashSet<>())
                 .genres(Set.of(genre2))
                 .build();

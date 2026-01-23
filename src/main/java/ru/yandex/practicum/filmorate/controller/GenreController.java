@@ -17,12 +17,12 @@ import java.util.Collection;
 public class GenreController {
     private final GenreService genreService;
 
-    @GetMapping//получить полный список жанров
+    @GetMapping
     public Collection<Genre> getGenres() {
         return genreService.getGenres();
     }
 
-    @GetMapping("/{id}") //получить жанр по id
+    @GetMapping("/{id}")
     public Genre getGenreById(@PathVariable int id) {
         return genreService.getGenreById(id);
     }

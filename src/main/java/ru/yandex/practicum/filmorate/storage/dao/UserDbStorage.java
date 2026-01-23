@@ -51,7 +51,7 @@ public class UserDbStorage implements UserStorage {
                 user.getName(),
                 user.getBirthday(),
                 user.getId());
-        log.info("Обновлены данные пользователя с id:" + user.getId() + " Подробнее: " + user);
+        log.info("Обновлены данные пользователя с id:{} Подробнее: {}", user.getId(), user);
         return getUser(user.getId());
     }
 
