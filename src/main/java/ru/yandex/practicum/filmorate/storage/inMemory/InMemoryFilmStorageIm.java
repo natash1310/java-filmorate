@@ -1,11 +1,11 @@
-package ru.yandex.practicum.filmorate.storage;
+package ru.yandex.practicum.filmorate.storage.inMemory;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.interfaces.FilmStorage;
+import ru.yandex.practicum.filmorate.interfaces.FilmStorageIm;
 import ru.yandex.practicum.filmorate.model.Film;
 
 import java.util.ArrayList;
@@ -15,13 +15,13 @@ import java.util.Map;
 
 
 @Component
-public class InMemoryFilmStorage implements FilmStorage {
-    private static final Logger log = LoggerFactory.getLogger(InMemoryFilmStorage.class);
+public class InMemoryFilmStorageIm implements FilmStorageIm {
+    private static final Logger log = LoggerFactory.getLogger(InMemoryFilmStorageIm.class);
     private final Map<Integer, Film> films = new HashMap<>();
     private int idGen = 1;
 
     @Autowired
-    public InMemoryFilmStorage() {
+    public InMemoryFilmStorageIm() {
     }
 
     @Override

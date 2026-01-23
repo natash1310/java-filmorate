@@ -6,7 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.interfaces.FilmStorage;
+import ru.yandex.practicum.filmorate.interfaces.FilmStorageIm;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.services.FilmService;
 
@@ -18,23 +18,23 @@ import java.util.List;
 @RequestMapping("/films")
 public class FilmController {
 
-    private final FilmStorage filmStorage;
+    private final FilmStorageIm filmStorageIm;
     private final FilmService filmService;
 
-    public FilmController(FilmStorage filmStorage, FilmService filmService) {
-        this.filmStorage = filmStorage;
+    public FilmController(FilmStorageIm filmStorageIm, FilmService filmService) {
+        this.filmStorageIm = filmStorageIm;
         this.filmService = filmService;
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Film> getFilm(@PathVariable("id") @Positive Integer id) {
-        return ResponseEntity.ok(filmStorage.getFilm(id));
+        return ResponseEntity.ok(filmStorageIm.getFilm(id));
     }
 
     @GetMapping
     public ResponseEntity<Collection<Film>> getFilms() {
-        log.info("Получен запрос на получение всех фильмов. Количество фильмов: {}", filmStorage.getAllFilms().size());
-        return ResponseEntity.ok(filmStorage.getAllFilms());
+        log.info("Получен запрос на получение всех фильмов. Количество фильмов: {}", filmStorageIm.getAllFilms().size());
+        return ResponseEntity.ok(filmStorageIm.getAllFilms());
     }
 
     @PostMapping

@@ -6,7 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.interfaces.UserStorage;
+import ru.yandex.practicum.filmorate.interfaces.UserStorageIm;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.services.UserService;
 
@@ -18,24 +18,24 @@ import java.util.List;
 @RequestMapping("/users")
 public class UserController {
 
-    private final UserStorage userStorage;
+    private final UserStorageIm userStorageIm;
     private final UserService userService;
 
-    public UserController(UserStorage userStorage, UserService userService) {
-        this.userStorage = userStorage;
+    public UserController(UserStorageIm userStorageIm, UserService userService) {
+        this.userStorageIm = userStorageIm;
         this.userService = userService;
     }
 
     @GetMapping
     public ResponseEntity<Collection<User>> getUsers() {
         log.info("Получен запрос на получение всех пользователей. Количество пользователей: {}",
-                userStorage.getAllUsers().size());
-        return ResponseEntity.ok(userStorage.getAllUsers());
+                userStorageIm.getAllUsers().size());
+        return ResponseEntity.ok(userStorageIm.getAllUsers());
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<User> getUser(@PathVariable("id") @Positive Integer id) {
-        return ResponseEntity.ok(userStorage.getUser(id));
+        return ResponseEntity.ok(userStorageIm.getUser(id));
     }
 
     @PostMapping
