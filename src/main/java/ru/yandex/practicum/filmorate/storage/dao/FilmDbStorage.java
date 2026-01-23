@@ -35,7 +35,7 @@ public class FilmDbStorage implements FilmStorage {
     private final FilmGenresStorage filmGenresStorage;
 
     @Override
-    public Film getFilm(long filmId) {
+    public Film getFilm(int filmId) {
         Film film;
         String sqlQuery = "select * from FILMS where FILM_ID = ?";
         try {

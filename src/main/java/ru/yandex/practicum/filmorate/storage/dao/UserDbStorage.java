@@ -38,25 +38,25 @@ public class UserDbStorage implements UserStorage {
         SimpleJdbcInsert simpleJdbcInsert = new SimpleJdbcInsert(jdbcTemplate)
                 .withTableName("users")
                 .usingGeneratedKeyColumns("user_id");
-        long userId = simpleJdbcInsert.executeAndReturnKey(toMap(user)).longValue();
+        int userId = simpleJdbcInsert.executeAndReturnKey(toMap(user)).intValue();
         return getUser(userId);
     }
 
     @Override
     public User updateUser(User user) {
         String sqlQuery = "update USERS set EMAIL = ?, LOGIN = ?, NAME = ?, BIRTHDAY = ? where USER_ID = ?";
-        jdbcTemplate.update(sqlQuery
-                , user.getEmail()
-                , user.getLogin()
-                , user.getName()
-                , user.getBirthday()
-                , user.getId());
+        jdbcTemplate.update(sqlQuery,
+                user.getEmail(),
+                user.getLogin(),
+                user.getName(),
+                user.getBirthday(),
+                user.getId());
         log.info("Обновлены данные пользователя с id:" + user.getId() + " Подробнее: " + user);
         return getUser(user.getId());
     }
 
     @Override
-    public User getUser(long userId) {
+    public User getUser(int userId) {
         User user;
         String sqlQuery = "select * from USERS where USER_ID = ?";
         try {
