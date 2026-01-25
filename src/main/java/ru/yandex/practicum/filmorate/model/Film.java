@@ -1,13 +1,19 @@
 package ru.yandex.practicum.filmorate.model;
 
 import jakarta.validation.constraints.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
 
 @Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class Film {
     @PositiveOrZero(message = "id фильма не может быть отрицательным числом")
     private int id;
@@ -20,4 +26,8 @@ public class Film {
     @Positive(message = "Продолжительность фильма должна быть положительным числом")
     private Integer duration;
     private Set<Integer> likes = new HashSet<>();
+    private Set<Genre> genres = new HashSet<>();
+    @NotNull
+    private MpaRating mpa;
+    private int rate;
 }

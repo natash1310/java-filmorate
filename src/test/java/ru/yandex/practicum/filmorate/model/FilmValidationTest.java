@@ -4,11 +4,12 @@ import jakarta.validation.ConstraintViolation;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-
 import java.time.LocalDate;
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 @DisplayName("Валидация модели Film")
 class FilmValidationTest extends BaseValidationTest {
 
@@ -19,6 +20,7 @@ class FilmValidationTest extends BaseValidationTest {
         film.setDescription("Описание");
         film.setReleaseDate(LocalDate.of(2000, 1, 1));
         film.setDuration(100);
+        film.setMpa(new MpaRating(1, "test"));
         return film;
     }
 
