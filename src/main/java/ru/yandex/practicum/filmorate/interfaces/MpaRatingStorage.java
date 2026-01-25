@@ -1,4 +1,4 @@
-package ru.yandex.practicum.filmorate.interfaces.dal;
+package ru.yandex.practicum.filmorate.interfaces;
 
 import ru.yandex.practicum.filmorate.model.MpaRating;
 

@@ -1,15 +1,17 @@
-package ru.yandex.practicum.filmorate.storage.dao;
+package ru.yandex.practicum.filmorate.storage;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Component;
-import ru.yandex.practicum.filmorate.interfaces.dal.FriendshipStorage;
+import ru.yandex.practicum.filmorate.interfaces.FriendshipStorage;
 import ru.yandex.practicum.filmorate.model.Friendship;
+import ru.yandex.practicum.filmorate.model.User;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -37,19 +39,34 @@ public class FriendshipDbStorage implements FriendshipStorage {
     }
 
     @Override
-    public HashSet<Integer> getListOfFriends(int userId) {
-        String sqlQuery = "select FRIEND_ID from FRIENDSHIP where USER_ID = ?";
-        return new HashSet<>(jdbcTemplate.queryForList(sqlQuery, Integer.class, userId));
+    public List<User> getListOfFriends(int userId) {
+        String sqlQuery = "select u.* from USERS u " +
+                "join FRIENDSHIP f on u.USER_ID = f.FRIEND_ID " +
+                "where f.USER_ID = ?";
+        return jdbcTemplate.query(sqlQuery, this::mapRowToUser, userId);
     }
 
     @Override
-    public List<Integer> getAListOfMutualFriends(int userId, int otherId) {
-        String sqlQuery = "select FRIEND_ID " +
-                "from (select *  from FRIENDSHIP where USER_ID = ? or USER_ID = ?) " +
-                "group by FRIEND_ID HAVING (COUNT(*) > 1)";
-        return jdbcTemplate.queryForList(sqlQuery, Integer.class, userId, otherId);
+    public List<User> getAListOfMutualFriends(int userId, int otherId) {
+        String sqlQuery = "select u.* from USERS u " +
+                "where u.USER_ID in (" +
+                "    select FRIEND_ID " +
+                "    from (select * from FRIENDSHIP where USER_ID = ? or USER_ID = ?) " +
+                "    group by FRIEND_ID HAVING (COUNT(*) > 1)" +
+                ")";
+        return jdbcTemplate.query(sqlQuery, this::mapRowToUser, userId, otherId);
     }
 
+    private User mapRowToUser(ResultSet resultSet, int rowNum) throws SQLException {
+        return User.builder()
+                .id(resultSet.getInt("user_id"))
+                .email(resultSet.getString("email"))
+                .login(resultSet.getString("login"))
+                .name(resultSet.getString("name"))
+                .birthday(resultSet.getDate("birthday")
+                        .toLocalDate())
+                .build();
+    }
 
     private Map<String, Object> toMap(Friendship friends) {
         Map<String, Object> values = new HashMap<>();

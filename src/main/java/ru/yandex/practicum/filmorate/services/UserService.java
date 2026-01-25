@@ -1,25 +1,22 @@
 package ru.yandex.practicum.filmorate.services;
 
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
-import ru.yandex.practicum.filmorate.interfaces.dal.FriendshipStorage;
-import ru.yandex.practicum.filmorate.interfaces.dal.UserStorage;
+import ru.yandex.practicum.filmorate.interfaces.FriendshipStorage;
+import ru.yandex.practicum.filmorate.interfaces.UserStorage;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class UserService {
-    private static final Logger log = LoggerFactory.getLogger(UserService.class);
     private final UserStorage userStorage;
     private final FriendshipStorage friendShipStorage;
-    private int idGen = 1;
 
     public Collection<User> getAllUsers() {
         return userStorage.getAllUsers();
@@ -31,20 +28,17 @@ public class UserService {
 
     public List<User> getAllFriends(int userId) {
         userStorage.getUser(userId);
-        List<User> friendsList = friendShipStorage.getListOfFriends(userId).stream()
-                .map(userStorage::getUser)
-                .collect(Collectors.toList());
+        List<User> friendsList = friendShipStorage.getListOfFriends(userId);
         log.debug("Количество друзей пользователя c id:{} = {}", userId, (long) friendShipStorage
-                .getListOfFriends(userId).size());
+                .getListOfFriends(userId)
+                .size());
         return friendsList;
     }
 
     public List<User> getMutualFriends(int id, int otherId) {
         userStorage.getUser(id);
         userStorage.getUser(otherId);
-        List<User> mutualFriends = friendShipStorage.getAListOfMutualFriends(id, otherId).stream()
-                .map(userStorage::getUser)
-                .collect(Collectors.toList());
+        List<User> mutualFriends = friendShipStorage.getAListOfMutualFriends(id, otherId);
         log.debug("Число общих друзей у пользователей с id:{} и id:{} = {}", id, otherId, mutualFriends.size());
         return mutualFriends;
     }
@@ -68,19 +62,17 @@ public class UserService {
     public User addUser(User user) {
         checkUserNameForBlankOrNull(user);
         checkPostUserValidate(user);
-        user.setId(idGen);
-        userStorage.addUser(user);
-        idGen++;
+        User newUser = userStorage.addUser(user);
         log.info("Добавлен пользователь: {}", user);
-        return user;
+        return newUser;
     }
 
     public User updateUser(User user) {
         User beforeUser = userStorage.getUser(user.getId());
         checkUserNameForBlankOrNull(user);
-        userStorage.updateUser(user);
-        log.info("Данные пользователя: {} Обновлены на: {}", beforeUser, user);
-        return user;
+        User afterUser = userStorage.updateUser(user);
+        log.info("Данные пользователя: {} Обновлены на: {}", beforeUser, afterUser);
+        return afterUser;
     }
 
     private void checkPostUserValidate(User user) {

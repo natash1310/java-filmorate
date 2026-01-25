@@ -1,4 +1,4 @@
-package ru.yandex.practicum.filmorate.storage.dao;
+package ru.yandex.practicum.filmorate.storage;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -8,15 +8,14 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.interfaces.dal.FriendshipStorage;
-import ru.yandex.practicum.filmorate.interfaces.dal.UserStorage;
+import ru.yandex.practicum.filmorate.interfaces.FriendshipStorage;
+import ru.yandex.practicum.filmorate.interfaces.UserStorage;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Component
 @Primary
@@ -38,8 +37,11 @@ public class UserDbStorage implements UserStorage {
         SimpleJdbcInsert simpleJdbcInsert = new SimpleJdbcInsert(jdbcTemplate)
                 .withTableName("users")
                 .usingGeneratedKeyColumns("user_id");
-        int userId = simpleJdbcInsert.executeAndReturnKey(toMap(user)).intValue();
-        return getUser(userId);
+        int userId = simpleJdbcInsert.executeAndReturnKey(toMap(user))
+                .intValue();
+        user.setId(userId);
+        user.setFriends(new HashSet<>());
+        return user;
     }
 
     @Override
@@ -70,20 +72,27 @@ public class UserDbStorage implements UserStorage {
     private Map<String, Object> toMap(User user) {
         Map<String, Object> values = new HashMap<>();
         values.put("email", user.getEmail());
-        values.put("login", user.getLogin());
         values.put("name", user.getName());
+        values.put("login", user.getLogin());
         values.put("birthday", user.getBirthday());
         return values;
     }
 
     private User mapRowToUser(ResultSet resultSet, int rowNum) throws SQLException {
+        int userId = resultSet.getInt("user_id");
+        List<User> friendsList = friendShipStorage.getListOfFriends(userId);
+        Set<Integer> friendsIds = friendsList.stream()
+                .map(User::getId)
+                .collect(Collectors.toSet());
+
         return User.builder()
-                .id(resultSet.getInt("user_id"))
+                .id(userId)
                 .email(resultSet.getString("email"))
-                .login(resultSet.getString("login"))
                 .name(resultSet.getString("name"))
-                .birthday(resultSet.getDate("birthday").toLocalDate())
-                .friends(friendShipStorage.getListOfFriends(resultSet.getInt("user_id")))
+                .login(resultSet.getString("login"))
+                .birthday(resultSet.getDate("birthday")
+                        .toLocalDate())
+                .friends(friendsIds)
                 .build();
     }
 }

@@ -1,4 +1,4 @@
-package ru.yandex.practicum.filmorate.storage.dao;
+package ru.yandex.practicum.filmorate.storage;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -6,10 +6,11 @@ import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
-import ru.yandex.practicum.filmorate.interfaces.dal.FilmGenresStorage;
+import ru.yandex.practicum.filmorate.interfaces.FilmGenresStorage;
 import ru.yandex.practicum.filmorate.model.Genre;
 
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.List;
@@ -29,7 +30,9 @@ public class FilmGenresDbStorage implements FilmGenresStorage {
             @Override
             public void setValues(PreparedStatement ps, int i)
                     throws SQLException {
-                Genre genre = uniqueGenres.stream().toList().get(i);
+                Genre genre = uniqueGenres.stream()
+                        .toList()
+                        .get(i);
                 ps.setInt(1, filmId);
                 ps.setInt(2, genre.getId());
             }
@@ -48,9 +51,21 @@ public class FilmGenresDbStorage implements FilmGenresStorage {
     }
 
     @Override
-    public List<Integer> getListOfGenres(int id) {
-        String sqlQuery = "select GENRE_ID from FILM_GENRE_LINE where FILM_ID = ?";
-        return jdbcTemplate.queryForList(sqlQuery, Integer.class, id);
+    public Set<Genre> getGenresByFilmId(int filmId) {
+        String sqlQuery = "SELECT g.GENRE_ID, g.NAME " +
+                "FROM FILM_GENRE_LINE fgl " +
+                "JOIN GENRE g ON fgl.GENRE_ID = g.GENRE_ID " +
+                "WHERE fgl.FILM_ID = ?";
+
+        List<Genre> genres = jdbcTemplate.query(sqlQuery, this::mapRowToGenre, filmId);
+        return new HashSet<>(genres);
+    }
+
+    private Genre mapRowToGenre(ResultSet resultSet, int rowNum) throws SQLException {
+        return Genre.builder()
+                .id(resultSet.getInt("genre_id"))
+                .name(resultSet.getString("name"))
+                .build();
     }
 
     private JdbcOperations getJdbcTemplate() {

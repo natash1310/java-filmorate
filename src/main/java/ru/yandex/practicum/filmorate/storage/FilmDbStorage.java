@@ -1,4 +1,4 @@
-package ru.yandex.practicum.filmorate.storage.dao;
+package ru.yandex.practicum.filmorate.storage;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -8,9 +8,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.interfaces.dal.FilmGenresStorage;
-import ru.yandex.practicum.filmorate.interfaces.dal.FilmStorage;
-import ru.yandex.practicum.filmorate.interfaces.dal.LikeStorage;
+import ru.yandex.practicum.filmorate.interfaces.FilmGenresStorage;
+import ru.yandex.practicum.filmorate.interfaces.FilmStorage;
+import ru.yandex.practicum.filmorate.interfaces.LikeStorage;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.MpaRating;
@@ -57,11 +57,16 @@ public class FilmDbStorage implements FilmStorage {
                 .usingGeneratedKeyColumns("film_id");
         isValidMpa(film.getMpa());
         isValidGenres(film.getGenres());
-        int filmId = simpleJdbcInsert.executeAndReturnKey(toMap(film)).intValue();
-        if (film.getGenres() != null && !film.getGenres().isEmpty()) {
+        int filmId = simpleJdbcInsert.executeAndReturnKey(toMap(film))
+                .intValue();
+
+        if (film.getGenres() != null && !film.getGenres()
+                .isEmpty()) {
             filmGenresStorage.addGenres(film.getGenres(), filmId);
         }
-        return getFilm(filmId);
+
+        film.setId(filmId);
+        return film;
     }
 
     @Override
@@ -76,7 +81,8 @@ public class FilmDbStorage implements FilmStorage {
                 film.getReleaseDate(),
                 film.getDuration(),
                 film.getRate(),
-                film.getMpa().getId(),
+                film.getMpa()
+                        .getId(),
                 film.getId());
 
         Film oldFilm = getFilm(film.getId());
@@ -85,7 +91,8 @@ public class FilmDbStorage implements FilmStorage {
             filmGenresStorage.deleteGenres(oldFilm.getId());
         }
 
-        if (film.getGenres() != null && !film.getGenres().isEmpty()) {
+        if (film.getGenres() != null && !film.getGenres()
+                .isEmpty()) {
             filmGenresStorage.addGenres(film.getGenres(), oldFilm.getId());
         }
         return getFilm(oldFilm.getId());
@@ -96,12 +103,13 @@ public class FilmDbStorage implements FilmStorage {
                 .id(resultSet.getInt("film_id"))
                 .name(resultSet.getString("name"))
                 .description(resultSet.getString("description"))
-                .releaseDate(resultSet.getDate("release_date").toLocalDate())
+                .releaseDate(resultSet.getDate("release_date")
+                        .toLocalDate())
                 .duration(resultSet.getInt("duration"))
                 .rate(resultSet.getInt("rate"))
                 .mpa(mpaService.getMpaById(resultSet.getInt("mpa_id")))
                 .likes(likesStorage.getListOfLikes(resultSet.getInt("film_id")))
-                .genres(genreService.getListOfGenres(resultSet.getInt("film_id")))
+                .genres(genreService.getGenresByFilmId(resultSet.getInt("film_id")))
                 .build();
     }
 
@@ -112,7 +120,8 @@ public class FilmDbStorage implements FilmStorage {
         values.put("release_date", film.getReleaseDate());
         values.put("duration", film.getDuration());
         values.put("rate", film.getRate());
-        values.put("MPA_id", film.getMpa().getId());
+        values.put("MPA_id", film.getMpa()
+                .getId());
         return values;
     }
 

@@ -1,6 +1,9 @@
-package ru.yandex.practicum.filmorate.interfaces.dal;
+package ru.yandex.practicum.filmorate.interfaces;
+
+import ru.yandex.practicum.filmorate.model.Film;
 
 import java.util.HashSet;
+import java.util.List;
 
 public interface LikeStorage {
     void addLike(int filmId, int userId);
@@ -9,6 +12,6 @@ public interface LikeStorage {
 
     HashSet<Integer> getListOfLikes(int filmId);
 
-    HashSet<Integer> getTheBestFilms(int count);
+    List<Film> getTheBestFilms(int count);
 
 }

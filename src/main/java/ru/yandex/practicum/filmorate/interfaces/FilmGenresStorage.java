@@ -1,8 +1,7 @@
-package ru.yandex.practicum.filmorate.interfaces.dal;
+package ru.yandex.practicum.filmorate.interfaces;
 
 import ru.yandex.practicum.filmorate.model.Genre;
 
-import java.util.List;
 import java.util.Set;
 
 public interface FilmGenresStorage {
@@ -10,6 +9,6 @@ public interface FilmGenresStorage {
 
     void deleteGenres(int filmId);
 
-    List<Integer> getListOfGenres(int id);
+    Set<Genre> getGenresByFilmId(int id);
 
 }

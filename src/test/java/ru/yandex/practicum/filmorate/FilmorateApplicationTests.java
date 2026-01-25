@@ -10,17 +10,18 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.interfaces.dal.*;
+import ru.yandex.practicum.filmorate.interfaces.*;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.MpaRating;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.storage.dao.FilmDbStorage;
-import ru.yandex.practicum.filmorate.storage.dao.UserDbStorage;
+import ru.yandex.practicum.filmorate.storage.FilmDbStorage;
+import ru.yandex.practicum.filmorate.storage.UserDbStorage;
 
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -100,8 +101,7 @@ class FilmorateApplicationTests {
                 .birthday(LocalDate.of(1990, 1, 1))
                 .friends(new HashSet<>())
                 .build();
-        NotFoundException e = Assertions.assertThrows(
-                NotFoundException.class, () -> userStorage.updateUser(user));
+        NotFoundException e = Assertions.assertThrows(NotFoundException.class, () -> userStorage.updateUser(user));
         assertThat("Пользователь с id 999 не найден", equalTo(e.getMessage()));
     }
 
@@ -129,16 +129,31 @@ class FilmorateApplicationTests {
                 .build();
         User addUser1 = userStorage.addUser(user1);
         User addUser2 = userStorage.addUser(user2);
-        assertThat("Список пользователей пуст", userStorage.getAllUsers(), hasSize(2));
-        assertThat("User1 не найден", userStorage.getAllUsers(), hasItem(addUser1));
-        assertThat("User2 не найден", userStorage.getAllUsers(), hasItem(addUser2));
+
+        Collection<User> allUsers = userStorage.getAllUsers();
+
+        assertThat("Список пользователей должен содержать 2 элемента", allUsers, hasSize(2));
+
+        List<Integer> userIds = allUsers.stream()
+                .map(User::getId)
+                .toList();
+        assertThat("User1 должен быть в списке", userIds, hasItem(addUser1.getId()));
+        assertThat("User2 должен быть в списке", userIds, hasItem(addUser2.getId()));
+
+        User fetchedUser1 = allUsers.stream()
+                .filter(u -> u.getId() == addUser1.getId())
+                .findFirst()
+                .orElseThrow();
+
+        assertThat("Email User1 совпадает", fetchedUser1.getEmail(), equalTo(addUser1.getEmail()));
+        assertThat("Login User1 совпадает", fetchedUser1.getLogin(), equalTo(addUser1.getLogin()));
+        assertThat("Name User1 совпадает", fetchedUser1.getName(), equalTo(addUser1.getName()));
     }
 
     @Test
     @DisplayName("Ошибка при запросе пользователя по несуществующему id")
     void getUserInvalidIdTest() {
-        NotFoundException e = Assertions.assertThrows(
-                NotFoundException.class, () -> userStorage.getUser(1));
+        NotFoundException e = Assertions.assertThrows(NotFoundException.class, () -> userStorage.getUser(1));
         assertThat("Пользователь с id 1 не найден", equalTo(e.getMessage()));
     }
 
@@ -158,7 +173,7 @@ class FilmorateApplicationTests {
     @Test
     @DisplayName("Получение пустого списка друзей пользователя")
     void getFriendsByEmptyTest() {
-        Collection<Integer> friends = friendShipStorage.getListOfFriends(1);
+        Collection<User> friends = friendShipStorage.getListOfFriends(1);
         assertThat("Список друзей не пуст", friends, hasSize(0));
     }
 
@@ -180,10 +195,10 @@ class FilmorateApplicationTests {
         User addUser1 = userStorage.addUser(user1);
         User addUser2 = userStorage.addUser(user2);
         friendShipStorage.addAsFriend(addUser1.getId(), addUser2.getId());
-        assertThat("User2 не добавлен в друзья User1",
-                userStorage.getUser(addUser1.getId()).getFriends(), hasItem(addUser2.getId()));
-        assertThat("Список друзей User2 не пуст",
-                userStorage.getUser(addUser2.getId()).getFriends(), empty());
+        assertThat("User2 не добавлен в друзья User1", userStorage.getUser(addUser1.getId())
+                .getFriends(), hasItem(addUser2.getId()));
+        assertThat("Список друзей User2 не пуст", userStorage.getUser(addUser2.getId())
+                .getFriends(), empty());
     }
 
     @Test
@@ -204,15 +219,15 @@ class FilmorateApplicationTests {
         User addUser1 = userStorage.addUser(user1);
         User addUser2 = userStorage.addUser(user2);
         friendShipStorage.addAsFriend(addUser1.getId(), addUser2.getId());
-        assertThat("Список друзей User1 пуст",
-                userStorage.getUser(addUser1.getId()).getFriends(), hasItem(addUser2.getId()));
+        assertThat("Список друзей User1 пуст", userStorage.getUser(addUser1.getId())
+                .getFriends(), hasItem(addUser2.getId()));
         friendShipStorage.removeFromFriends(addUser1.getId(), addUser2.getId());
-        assertThat("Список друзей User1 не пуст",
-                userStorage.getUser(addUser1.getId()).getFriends(), empty());
+        assertThat("Список друзей User1 не пуст", userStorage.getUser(addUser1.getId())
+                .getFriends(), empty());
     }
 
     @Test
-    @DisplayName("Получение списка друзей пользователя")
+    @DisplayName("Получение списка друзей")
     void getListOfFriendsTest() {
         User user1 = User.builder()
                 .email("user1@yandex.ru")
@@ -232,17 +247,26 @@ class FilmorateApplicationTests {
                 .name("User3")
                 .birthday(LocalDate.of(1993, 1, 1))
                 .build();
+
         User addUser1 = userStorage.addUser(user1);
         User addUser2 = userStorage.addUser(user2);
         User addUser3 = userStorage.addUser(user3);
+
         friendShipStorage.addAsFriend(addUser1.getId(), addUser2.getId());
         friendShipStorage.addAsFriend(addUser1.getId(), addUser3.getId());
-        assertThat("Список друзей User1 не содержит id User2 и User3",
-                friendShipStorage.getListOfFriends(addUser1.getId()), contains(addUser2.getId(), addUser3.getId()));
+
+        List<User> friends = friendShipStorage.getListOfFriends(addUser1.getId());
+        assertThat("Список должен содержать 2 друзей", friends, hasSize(2));
+
+        List<Integer> friendIds = friends.stream()
+                .map(User::getId)
+                .toList();
+        assertThat("Список друзей User1 должен содержать id User2 и User3", friendIds, containsInAnyOrder(addUser2.getId(), addUser3.getId()));
     }
 
+
     @Test
-    @DisplayName("Получение списка общих друзей двух пользователей")
+    @DisplayName("Получение списка общих друзей")
     void getAListOfMutualFriendsTest() {
         User user1 = User.builder()
                 .email("user1@yandex.ru")
@@ -267,9 +291,11 @@ class FilmorateApplicationTests {
         User addUser3 = userStorage.addUser(user3);
         friendShipStorage.addAsFriend(addUser1.getId(), addUser3.getId());
         friendShipStorage.addAsFriend(addUser2.getId(), addUser3.getId());
-        assertThat("Список друзей User1 не содержит id User2 и User3",
-                friendShipStorage.getAListOfMutualFriends(addUser1.getId(), addUser2.getId()),
-                contains(addUser3.getId()));
+
+        List<User> mutualFriends = friendShipStorage.getAListOfMutualFriends(addUser1.getId(), addUser2.getId());
+        assertThat("Список должен содержать 1 общего друга", mutualFriends, hasSize(1));
+        assertThat("Это должен быть User3", mutualFriends.get(0)
+                .getId(), equalTo(addUser3.getId()));
     }
 
     @Test
@@ -281,7 +307,10 @@ class FilmorateApplicationTests {
                 .releaseDate(LocalDate.of(1960, 1, 1))
                 .duration(109)
                 .rate(1)
-                .mpa(MpaRating.builder().id(1).name("G").build())
+                .mpa(MpaRating.builder()
+                        .id(1)
+                        .name("G")
+                        .build())
                 .likes(new HashSet<>())
                 .genres(new HashSet<>())
                 .build();
@@ -299,9 +328,15 @@ class FilmorateApplicationTests {
                 .releaseDate(LocalDate.of(1960, 1, 1))
                 .duration(100)
                 .rate(1)
-                .mpa(MpaRating.builder().id(1).name("G").build())
+                .mpa(MpaRating.builder()
+                        .id(1)
+                        .name("G")
+                        .build())
                 .likes(new HashSet<>())
-                .genres(Set.of(Genre.builder().id(2).name("Драма").build()))
+                .genres(Set.of(Genre.builder()
+                        .id(2)
+                        .name("Драма")
+                        .build()))
                 .build();
         Film oldFilm = filmStorage.addFilm((film1));
         Film film2 = Film.builder()
@@ -311,9 +346,15 @@ class FilmorateApplicationTests {
                 .releaseDate(LocalDate.of(1960, 1, 1))
                 .duration(100)
                 .rate(1)
-                .mpa(MpaRating.builder().id(1).name("G").build())
+                .mpa(MpaRating.builder()
+                        .id(1)
+                        .name("G")
+                        .build())
                 .likes(new HashSet<>())
-                .genres(Set.of(Genre.builder().id(2).name("Драма").build()))
+                .genres(Set.of(Genre.builder()
+                        .id(2)
+                        .name("Драма")
+                        .build()))
                 .build();
         Film updateFilm = filmStorage.updateFilm(film2);
         assertThat("Фильм не обновлен", film2, equalTo(updateFilm));
@@ -329,12 +370,17 @@ class FilmorateApplicationTests {
                 .releaseDate(LocalDate.of(1960, 1, 1))
                 .duration(100)
                 .rate(1)
-                .mpa(MpaRating.builder().id(1).name("G").build())
+                .mpa(MpaRating.builder()
+                        .id(1)
+                        .name("G")
+                        .build())
                 .likes(new HashSet<>())
-                .genres(Set.of(Genre.builder().id(2).name("Драма").build()))
+                .genres(Set.of(Genre.builder()
+                        .id(2)
+                        .name("Драма")
+                        .build()))
                 .build();
-        NotFoundException e = Assertions.assertThrows(
-                NotFoundException.class, () -> filmStorage.updateFilm(film));
+        NotFoundException e = Assertions.assertThrows(NotFoundException.class, () -> filmStorage.updateFilm(film));
         assertThat("Фильм с id 999 не найден", equalTo(e.getMessage()));
     }
 
@@ -354,9 +400,15 @@ class FilmorateApplicationTests {
                 .releaseDate(LocalDate.of(1960, 1, 1))
                 .duration(109)
                 .rate(1)
-                .mpa(MpaRating.builder().id(1).name("G").build())
+                .mpa(MpaRating.builder()
+                        .id(1)
+                        .name("G")
+                        .build())
                 .likes(new HashSet<>())
-                .genres(Set.of(Genre.builder().id(2).name("Драма").build()))
+                .genres(Set.of(Genre.builder()
+                        .id(2)
+                        .name("Драма")
+                        .build()))
                 .build();
         Film film2 = Film.builder()
                 .name("Film2")
@@ -364,7 +416,10 @@ class FilmorateApplicationTests {
                 .releaseDate(LocalDate.of(1961, 1, 1))
                 .duration(109)
                 .rate(5)
-                .mpa(MpaRating.builder().id(1).name("G").build())
+                .mpa(MpaRating.builder()
+                        .id(1)
+                        .name("G")
+                        .build())
                 .likes(new HashSet<>())
                 .genres(new HashSet<>())
                 .build();
@@ -392,9 +447,15 @@ class FilmorateApplicationTests {
                 .releaseDate(LocalDate.of(1960, 1, 1))
                 .duration(109)
                 .rate(1)
-                .mpa(MpaRating.builder().id(1).name("G").build())
+                .mpa(MpaRating.builder()
+                        .id(1)
+                        .name("G")
+                        .build())
                 .likes(new HashSet<>())
-                .genres(Set.of(Genre.builder().id(2).name("Драма").build()))
+                .genres(Set.of(Genre.builder()
+                        .id(2)
+                        .name("Драма")
+                        .build()))
                 .build();
         Film addFilm = filmStorage.addFilm(film1);
         assertThat(addFilm, equalTo(filmStorage.getFilm(addFilm.getId())));
@@ -422,15 +483,21 @@ class FilmorateApplicationTests {
                 .releaseDate(LocalDate.of(1960, 1, 1))
                 .duration(109)
                 .rate(1)
-                .mpa(MpaRating.builder().id(1).name("G").build())
+                .mpa(MpaRating.builder()
+                        .id(1)
+                        .name("G")
+                        .build())
                 .likes(new HashSet<>())
-                .genres(Set.of(Genre.builder().id(2).name("Драма").build()))
+                .genres(Set.of(Genre.builder()
+                        .id(2)
+                        .name("Драма")
+                        .build()))
                 .build();
         User addUser1 = userStorage.addUser(user1);
         Film addFilm1 = filmStorage.addFilm(film1);
         likesStorage.addLike(addFilm1.getId(), addUser1.getId());
-        assertThat(String.format("%s не поставил лайк %s", addUser1.getName(), addFilm1.getName()),
-                filmStorage.getFilm(addFilm1.getId()).getLikes(), hasItem(addUser1.getId()));
+        assertThat(String.format("%s не поставил лайк %s", addUser1.getName(), addFilm1.getName()), filmStorage.getFilm(addFilm1.getId())
+                .getLikes(), hasItem(addUser1.getId()));
     }
 
     @Test
@@ -448,18 +515,24 @@ class FilmorateApplicationTests {
                 .releaseDate(LocalDate.of(1960, 1, 1))
                 .duration(109)
                 .rate(1)
-                .mpa(MpaRating.builder().id(1).name("G").build())
+                .mpa(MpaRating.builder()
+                        .id(1)
+                        .name("G")
+                        .build())
                 .likes(new HashSet<>())
-                .genres(Set.of(Genre.builder().id(2).name("Драма").build()))
+                .genres(Set.of(Genre.builder()
+                        .id(2)
+                        .name("Драма")
+                        .build()))
                 .build();
         User addUser1 = userStorage.addUser(user1);
         Film addFilm1 = filmStorage.addFilm(film1);
         likesStorage.addLike(addFilm1.getId(), addUser1.getId());
-        assertThat(String.format("Список лайков %s пуст", addFilm1.getName()),
-                filmStorage.getFilm(addFilm1.getId()).getLikes(), hasItem(addUser1.getId()));
+        assertThat(String.format("Список лайков %s пуст", addFilm1.getName()), filmStorage.getFilm(addFilm1.getId())
+                .getLikes(), hasItem(addUser1.getId()));
         likesStorage.removeLike(addFilm1.getId(), addUser1.getId());
-        assertThat(String.format("Список лайков %s не пуст", addFilm1.getName()),
-                filmStorage.getFilm(addFilm1.getId()).getLikes(), empty());
+        assertThat(String.format("Список лайков %s не пуст", addFilm1.getName()), filmStorage.getFilm(addFilm1.getId())
+                .getLikes(), empty());
     }
 
     @Test
@@ -477,20 +550,24 @@ class FilmorateApplicationTests {
                 .releaseDate(LocalDate.of(1960, 1, 1))
                 .duration(109)
                 .rate(1)
-                .mpa(MpaRating.builder().id(1).name("G").build())
+                .mpa(MpaRating.builder()
+                        .id(1)
+                        .name("G")
+                        .build())
                 .likes(new HashSet<>())
-                .genres(Set.of(Genre.builder().id(2).name("Драма").build()))
+                .genres(Set.of(Genre.builder()
+                        .id(2)
+                        .name("Драма")
+                        .build()))
                 .build();
         User addUser1 = userStorage.addUser(user1);
         Film addFilm1 = filmStorage.addFilm(film1);
         likesStorage.addLike(addFilm1.getId(), addUser1.getId());
-        assertThat(String.format("Список лайков %s не содержит id %s = %s",
-                        addFilm1.getName(), addUser1.getName(), addUser1.getId()),
-                likesStorage.getListOfLikes(addFilm1.getId()), contains(addUser1.getId()));
+        assertThat(String.format("Список лайков %s не содержит id %s = %s", addFilm1.getName(), addUser1.getName(), addUser1.getId()), likesStorage.getListOfLikes(addFilm1.getId()), contains(addUser1.getId()));
     }
 
     @Test
-    @DisplayName("Получение списка лучших фильмов по лайкам")
+    @DisplayName("Получение списка лучших фильмов")
     void getTheBestFilmsTest() {
         User user1 = User.builder()
                 .email("user1@yandex.ru")
@@ -510,9 +587,15 @@ class FilmorateApplicationTests {
                 .releaseDate(LocalDate.of(1960, 1, 1))
                 .duration(109)
                 .rate(1)
-                .mpa(MpaRating.builder().id(1).name("G").build())
+                .mpa(MpaRating.builder()
+                        .id(1)
+                        .name("G")
+                        .build())
                 .likes(new HashSet<>())
-                .genres(Set.of(Genre.builder().id(2).name("Драма").build()))
+                .genres(Set.of(Genre.builder()
+                        .id(2)
+                        .name("Драма")
+                        .build()))
                 .build();
         Film film2 = Film.builder()
                 .name("Film2")
@@ -520,7 +603,10 @@ class FilmorateApplicationTests {
                 .releaseDate(LocalDate.of(1961, 1, 1))
                 .duration(109)
                 .rate(5)
-                .mpa(MpaRating.builder().id(1).name("G").build())
+                .mpa(MpaRating.builder()
+                        .id(1)
+                        .name("G")
+                        .build())
                 .likes(new HashSet<>())
                 .genres(new HashSet<>())
                 .build();
@@ -530,10 +616,18 @@ class FilmorateApplicationTests {
         Film addFilm2 = filmStorage.addFilm(film2);
         likesStorage.addLike(addFilm1.getId(), addUser1.getId());
         likesStorage.addLike(addFilm1.getId(), addUser2.getId());
-        assertThat("Список лучших фильмов отличается от [1, 2]",
-                likesStorage.getTheBestFilms(5), contains(addFilm1.getId(), addFilm2.getId()));
-        assertThat("Список лучших фильмов отличается от [1]",
-                likesStorage.getTheBestFilms(1), hasItem(addFilm1.getId()));
+
+        List<Film> topFilms = likesStorage.getTheBestFilms(5);
+        assertThat("ТОП должен содержать 2 фильма", topFilms, hasSize(2));
+        assertThat("Первым должен быть Film1", topFilms.get(0)
+                .getId(), equalTo(addFilm1.getId()));
+        assertThat("Вторым должен быть Film2", topFilms.get(1)
+                .getId(), equalTo(addFilm2.getId()));
+
+        List<Film> topOne = likesStorage.getTheBestFilms(1);
+        assertThat("ТОП-1 должен содержать 1 фильм", topOne, hasSize(1));
+        assertThat("Это должен быть Film1", topOne.get(0)
+                .getId(), equalTo(addFilm1.getId()));
     }
 
     @Test
@@ -543,8 +637,8 @@ class FilmorateApplicationTests {
                 .id(6)
                 .name("Боевик")
                 .build();
-        assertThat(genreStorage.getGenres(), hasSize(6));
-        assertThat(genreStorage.getGenres(), hasItem(genre));
+        assertThat(genreStorage.addGenresToFilm(), hasSize(6));
+        assertThat(genreStorage.addGenresToFilm(), hasItem(genre));
     }
 
     @Test
@@ -575,13 +669,20 @@ class FilmorateApplicationTests {
                 .releaseDate(LocalDate.of(1960, 1, 1))
                 .duration(109)
                 .rate(1)
-                .mpa(MpaRating.builder().id(1).name("G").build())
+                .mpa(MpaRating.builder()
+                        .id(1)
+                        .name("G")
+                        .build())
                 .likes(new HashSet<>())
-                .genres(Set.of(Genre.builder().id(2).name("Драма").build()))
+                .genres(Set.of(Genre.builder()
+                        .id(2)
+                        .name("Драма")
+                        .build()))
                 .build();
         Film addFilm1 = filmStorage.addFilm(film1);
         filmGenreLineStorage.addGenres(Set.of(genre1), addFilm1.getId());
-        assertThat(filmStorage.getFilm(addFilm1.getId()).getGenres(), hasItem(genre1));
+        assertThat(filmStorage.getFilm(addFilm1.getId())
+                .getGenres(), hasItem(genre1));
     }
 
     @Test
@@ -597,12 +698,15 @@ class FilmorateApplicationTests {
                 .releaseDate(LocalDate.of(1960, 1, 1))
                 .duration(109)
                 .rate(1)
-                .mpa(MpaRating.builder().id(1).name("G").build())
+                .mpa(MpaRating.builder()
+                        .id(1)
+                        .name("G")
+                        .build())
                 .likes(new HashSet<>())
                 .genres(Set.of(genre2))
                 .build();
         Film addFilm1 = filmStorage.addFilm(film1);
-        assertThat(filmGenreLineStorage.getListOfGenres(addFilm1.getId()), hasItem(genre2.getId()));
+        assertThat(filmGenreLineStorage.getGenresByFilmId(addFilm1.getId()), contains(genre2));
     }
 
     @Test
@@ -618,13 +722,16 @@ class FilmorateApplicationTests {
                 .releaseDate(LocalDate.of(1960, 1, 1))
                 .duration(109)
                 .rate(1)
-                .mpa(MpaRating.builder().id(1).name("G").build())
+                .mpa(MpaRating.builder()
+                        .id(1)
+                        .name("G")
+                        .build())
                 .likes(new HashSet<>())
                 .genres(Set.of(genre2))
                 .build();
         Film addFilm1 = filmStorage.addFilm(film1);
         filmGenreLineStorage.deleteGenres(addFilm1.getId());
-        assertThat(filmGenreLineStorage.getListOfGenres(addFilm1.getId()), empty());
+        assertThat(filmGenreLineStorage.getGenresByFilmId(addFilm1.getId()), empty());
     }
 
     @Test
